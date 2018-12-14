@@ -1,4 +1,4 @@
-package com.liushao.redislockframework;
+package com.distributed.framework.redis;
 
 public class CacheLockException extends Throwable{
 	private String msg;

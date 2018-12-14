@@ -1,10 +1,12 @@
-package com.liushao.redislockframework;
+package com.distributed.framework;
 
 
 import java.io.IOException;
 import java.lang.reflect.Proxy;
 import java.util.concurrent.CountDownLatch;
 
+import com.distributed.framework.redis.CacheLockInterceptor;
+import com.distributed.framework.redis.RedisClient;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -13,14 +15,11 @@ import redis.clients.jedis.JedisPool;
 public class SecKillTest {
 	private static Long commidityId1 = 10000001L;
 	private static Long commidityId2 = 10000002L;
-	private 
-	RedisClient client;
+	private RedisClient client;
 	public static String HOST = "127.0.0.1";
 	private JedisPool jedisPool;
 	@Before
 	public synchronized void  beforeTest() throws IOException{
-		
-		
 		jedisPool = new JedisPool("127.0.0.1");
 		
 	}

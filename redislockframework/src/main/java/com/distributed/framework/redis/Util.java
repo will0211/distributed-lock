@@ -1,4 +1,4 @@
-package com.liushao.redislockframework;
+package com.distributed.framework.redis;
 
 import com.alibaba.fastjson.JSON;
 

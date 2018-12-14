@@ -1,4 +1,4 @@
-package com.liushao.redislockframework;
+package com.distributed.framework.annotation;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;

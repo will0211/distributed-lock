@@ -1,20 +1,32 @@
-package com.liushao.redislockframework;
+package com.distributed.framework.redis;
+
+import com.distributed.framework.annotation.CacheLock;
+import com.distributed.framework.annotation.LockedComplexObject;
+import com.distributed.framework.annotation.LockedObject;
+import redis.clients.jedis.JedisPool;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.concurrent.TimeUnit;
 
 public class CacheLockInterceptor implements InvocationHandler{
 	public static int ERROR_COUNT  = 0;
 	private Object proxied;
-	
-	
+	private JedisPool jedisPool;
+
+
 	public CacheLockInterceptor(Object proxied) {
 		this.proxied = proxied;
 	}
+	public CacheLockInterceptor(Object proxied,JedisPool jedisPool) {
+		this.proxied = proxied;
+		this.jedisPool=jedisPool;
+	}
 
 	@Override
-	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+	public Object invoke(Object proxy, Method method, Object[] args) throws InvocationTargetException, IllegalAccessException, CacheLockException, InterruptedException {
 		
 		CacheLock cacheLock = method.getAnnotation(CacheLock.class);
 		//没有cacheLock注解，pass
@@ -28,19 +40,17 @@ public class CacheLockInterceptor implements InvocationHandler{
 		//根据获取到的参数注解和参数列表获得加锁的参数
 		Object lockedObject = getLockedObject(annotations,args);
 		String objectValue = lockedObject.toString();
-		RedisLock lock = new RedisLock(cacheLock.lockedPrefix(), objectValue);
-		boolean result = lock.lock(cacheLock.timeOut(), cacheLock.expireTime());
+		boolean result = RedisReentrantLock.getInstance().tryLock(objectValue,cacheLock.expireTime(), TimeUnit.MILLISECONDS);
 		if(!result){//取锁失败
 			ERROR_COUNT += 1;
 			throw new CacheLockException("get lock fail");
-			
 		}
 		try{
 			//执行方法
 			return method.invoke(proxied, args);
 		}finally{
 			System.out.println("intecepor 释放锁");
-			lock.unlock();//释放锁
+			RedisReentrantLock.getInstance().unlock(objectValue);//释放锁
 		}
 		
 	}
