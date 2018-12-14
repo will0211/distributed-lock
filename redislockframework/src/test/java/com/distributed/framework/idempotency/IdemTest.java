@@ -13,8 +13,8 @@ public class IdemTest {
 	//幂等测试
 	@Test
 	public void testSecKill(){
-		int threadCount = 10;
-		int splitPoint = 10;
+		int threadCount = 100;
+		int splitPoint = 100;
 		CountDownLatch endCount = new CountDownLatch(threadCount);
 		CountDownLatch beginCount = new CountDownLatch(1);
 
@@ -33,9 +33,11 @@ public class IdemTest {
 							return;
 						}
 						System.out.println("处理业务逻辑");
+						//	Thread.sleep(1000);
 					}  catch (InterruptedException e) {
 						e.printStackTrace();
 					}finally {
+						RedisReentrantLock.getInstance().unlock(commidityId1.toString());
 						endCount.countDown();
 					}
 				}

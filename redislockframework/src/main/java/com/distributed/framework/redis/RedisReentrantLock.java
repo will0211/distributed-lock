@@ -6,6 +6,7 @@ import redis.clients.jedis.JedisPool;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
@@ -18,6 +19,7 @@ public class RedisReentrantLock {
     private final ConcurrentMap<Thread, LockData> threadData = Maps.newConcurrentMap();
 
     private static JedisPool jedisPool;
+    public static final Random RANDOM = new Random();
 
     /**
      * 重试等待时间
@@ -68,7 +70,7 @@ public class RedisReentrantLock {
         Thread currentThread = Thread.currentThread();
         LockData lockData = threadData.get(currentThread);
         if ( lockData == null ) {
-            throw new IllegalMonitorStateException("You do not own the lock: " + lockId);
+           return;
         }
         int newLockCount = lockData.lockCount.decrementAndGet();
         if ( newLockCount > 0 ) {
@@ -80,7 +82,9 @@ public class RedisReentrantLock {
         try {
             unlockRedisLock(lockId,lockData.lockVal);
         } finally {
-            threadData.remove(currentThread);
+            if(lockData!=null){
+                threadData.remove(currentThread);
+            }
         }
     }
 
@@ -95,6 +99,12 @@ public class RedisReentrantLock {
             }
             if(System.currentTimeMillis()-startMillis-retryAwait>millisToWait){
                 break;
+            }
+
+            try {
+                ////短暂休眠，避免可能的活锁
+                Thread.sleep(3, RANDOM.nextInt(30));
+            } catch (InterruptedException e) {
             }
             LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(retryAwait));
         }
@@ -162,5 +172,9 @@ public class RedisReentrantLock {
             cs[i] = digits[ThreadLocalRandom.current().nextInt(digits.length)];
         }
         return new String(cs);
+    }
+
+    public static void main(String[] args) {
+        System.out.println(RANDOM.nextInt(30));
     }
 }
